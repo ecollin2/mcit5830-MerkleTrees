@@ -99,12 +99,17 @@ def prove_merkle(merkle_tree, random_indx):
     """
     merkle_proof = []
     # TODO YOUR CODE HERE
-    for level in merkle_tree[:-1]:
+    index = random_indx  
+
+    for level in merkle_tree[:-1]:  
         is_right_node = index % 2
         sibling_index = index - 1 if is_right_node else index + 1
+
         if sibling_index < len(level):
             merkle_proof.append(level[sibling_index])
+
         index = index // 2
+
     return merkle_proof
 
 
