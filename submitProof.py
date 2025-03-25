@@ -157,7 +157,7 @@ def send_signed_msg(proof, random_leaf):
             'chainId': w3.eth.chain_id,
             'from': acct.address,
             'nonce': nonce,
-            'gas': 2000000,
+            'gas': 500000,
             'gasPrice': gas_price
     })
 
