@@ -146,6 +146,7 @@ def send_signed_msg(proof, random_leaf):
     w3 = connect_to(chain)
 
     # TODO YOUR CODE HERE
+    contract = w3.eth.contract(address=address, abi=abi)
     proof_hex = [w3.to_hex(p) for p in proof]       
     leaf_hex = w3.to_hex(random_leaf) 
 
