@@ -79,15 +79,11 @@ def build_merkle(leaves):
 
     #TODO YOUR CODE HERE
     tree = [leaves]
-    current_level = leaves
-    while len(current_level) > 1:
-        next_level = []
-        for i in range(0, len(current_level), 2):
-            left = current_level[i]
-            right = current_level[i + 1] if i + 1 < len(current_level) else current_level[i]
-            next_level.append(hash_pair(left, right))
-        tree.append(next_level)
-        current_level = next_level
+    while len(tree[-1]) > 1:
+        new_layer = []
+        for i in range(0, len(tree[-1]), 2):
+            new_layer.append(hash_pair(tree[-1][i], tree[-1][i + 1]))
+        tree.append(new_layer)
     return tree
 
 
@@ -100,17 +96,13 @@ def prove_merkle(merkle_tree, random_indx):
     """
     merkle_proof = []
     # TODO YOUR CODE HERE
-    index = random_indx  
-
-    for level in merkle_tree[:-1]:  
-        is_right_node = index % 2
-        sibling_index = index - 1 if is_right_node else index + 1
-
-        if sibling_index < len(level):
-            merkle_proof.append(level[sibling_index])
-
-        index = index // 2
-
+    merkle_proof = []
+    current_index = random_indx
+    for layer in merkle_tree[:-1]:
+        sibling_index = current_index ^ 1
+        if sibling_index < len(layer):
+            merkle_proof.append(layer[sibling_index])
+        current_index //= 2
     return merkle_proof
 
 
@@ -128,9 +120,7 @@ def sign_challenge(challenge):
     eth_sk = acct.key
 
     # TODO YOUR CODE HERE
-    msg = eth_account.messages.encode_defunct(text=challenge)
-
-    eth_sig_obj = eth_account.Account.sign_message(msg, private_key=eth_sk)
+    eth_sig_obj = acct.sign_message(eth_account.messages.encode_defunct(text=challenge))
 
     return addr, eth_sig_obj.signature.hex()
 
@@ -150,18 +140,31 @@ def send_signed_msg(proof, random_leaf):
     # TODO YOUR CODE HERE
     contract = w3.eth.contract(address=address, abi=abi)
 
-    txn = contract.functions.submit(proof, random_leaf).build_transaction({
+    assert isinstance(random_leaf, bytes) and len(random_leaf) == 32, "random_leaf must be bytes32"
+    assert all(isinstance(p, bytes) and len(p) == 32 for p in proof), "Proof elements must be bytes32"
+
+    print(f"Submitting Merkle Proof: {[p.hex() for p in proof]}")
+    print(f"Submitting Leaf: {random_leaf.hex()}")
+
+    try:
+        estimated_gas = contract.functions.submit(proof, random_leaf).estimate_gas({
+            'from': acct.address
+        })
+    except Exception as e:
+        print(f"Error estimating gas: {e}")
+        return None
+
+    tx = contract.functions.submit(proof, random_leaf).build_transaction({
+        'chainId': w3.eth.chain_id,
         'from': acct.address,
         'nonce': w3.eth.get_transaction_count(acct.address),
-        'gas': 200000,
-        'gasPrice': w3.eth.gas_price,
-        'chainId': w3.eth.chain_id
+        'gas': estimated_gas,
+        'gasPrice': w3.eth.gas_price
     })
 
-    signed_txn = w3.eth.account.sign_transaction(txn, private_key=acct.key)
-
-    tx_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction)
-
+    signed_tx = w3.eth.account.sign_transaction(tx, private_key=acct.key)
+    tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+    print(f"Transaction sent with hash: {tx_hash.hex()}")
     return tx_hash.hex()
 
 
