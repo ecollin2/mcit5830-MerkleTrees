@@ -150,14 +150,17 @@ def send_signed_msg(proof, random_leaf):
     contract = w3.eth.contract(address=address, abi=abi)
 
     txn = contract.functions.submit(proof, random_leaf).build_transaction({
-        'chainId': 97,  # BNB testnet
-        'gas': 300000,
+        'from': acct.address,
+        'nonce': w3.eth.get_transaction_count(acct.address),
+        'gas': 200000,
         'gasPrice': w3.eth.gas_price,
-        'nonce': w3.eth.get_transaction_count(acct.address)
+        'chainId': w3.eth.chain_id
     })
 
     signed_txn = w3.eth.account.sign_transaction(txn, private_key=acct.key)
+
     tx_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction)
+
     return tx_hash.hex()
 
 
