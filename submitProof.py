@@ -138,11 +138,13 @@ def send_signed_msg(proof, random_leaf):
     w3 = connect_to(chain)
 
     # TODO YOUR CODE HERE
+    contract = w3.eth.contract(address=address, abi=abi)
+
     assert isinstance(random_leaf, bytes) and len(random_leaf) == 32, "random_leaf must be bytes32"
     assert all(isinstance(p, bytes) and len(p) == 32 for p in proof), "Proof elements must be bytes32"
 
     try:
-        estimated_gas = contract_info.functions.submit(proof, random_leaf).estimate_gas({
+        estimated_gas = contract.functions.submit(proof, random_leaf).estimate_gas({
             'from': acct.address
         })
     except Exception as e:
@@ -157,10 +159,10 @@ def send_signed_msg(proof, random_leaf):
         'gasPrice': w3.eth.gas_price
     })
 
-    signed_tx = w3.eth.account.sign_transaction(tx, private_key=acct.key)
+    signed_tx = acct.sign_transaction(tx)
     tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
 
-    return tx_hash
+    return tx_hash.hex()
 
 
 
