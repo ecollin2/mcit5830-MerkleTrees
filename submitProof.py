@@ -146,14 +146,14 @@ def send_signed_msg(proof, random_leaf):
     w3 = connect_to(chain)
 
     # TODO YOUR CODE HERE
-    proof_hex = [Web3.toHex(p) for p in proof]
-    random_leaf_hex = Web3.toHex(random_leaf)
+    proof_hex = [to_hex(p) for p in proof]       
+    leaf_hex = to_hex(random_leaf) 
 
     nonce = w3.eth.get_transaction_count(acct.address)
     gas_price = w3.eth.gas_price
 
     tx = contract.functions.submit(proof_hex, random_leaf_hex).build_transaction({
-        'chainId': 97,  # BSC testnet chain ID
+        'chainId': 97,  
         'gas': 2000000,
         'gasPrice': gas_price,
         'nonce': nonce
@@ -162,7 +162,7 @@ def send_signed_msg(proof, random_leaf):
     signed_tx = w3.eth.account.sign_transaction(tx, acct.key)
     tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
 
-    return Web3.toHex(tx_hash)
+    return to_hex(tx_hash)
 
 
 
