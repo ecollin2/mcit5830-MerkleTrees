@@ -104,7 +104,7 @@ def prove_merkle(merkle_tree, random_indx):
     """
     merkle_proof = []
     # TODO YOUR CODE HERE
-    merkle_proof = []
+    index=random_indx
     for layer in merkle_tree[:-1]:
         sibling_index = index ^ 1
         if sibling_index < len(layer):
