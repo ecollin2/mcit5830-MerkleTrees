@@ -148,7 +148,7 @@ def send_signed_msg(proof, random_leaf):
     contract = w3.eth.contract(address=address, abi=abi)
 
     proof_hex = [w3.to_hex(p) for p in proof]
-    leaf_hex = w3.to_hex(leaf)
+    leaf_hex = w3.to_hex(random_leaf)
 
     nonce = w3.eth.get_transaction_count(acct.address)
     gas_price = w3.eth.gas_price
