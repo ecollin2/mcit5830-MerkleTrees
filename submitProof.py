@@ -152,17 +152,19 @@ def send_signed_msg(proof, random_leaf):
     nonce = w3.eth.get_transaction_count(acct.address)
     gas_price = w3.eth.gas_price
 
-    tx = contract.functions.submit(proof_hex, random_leaf_hex).build_transaction({
-        'chainId': 97,  
-        'gas': 2000000,
-        'gasPrice': gas_price,
-        'nonce': nonce
-    })
+    try:
+        tx = contract.functions.submit(proof_hex, leaf_hex).build_transaction({
+            'chainId': w3.eth.chain_id,
+            'from': acct.address,
+            'nonce': nonce,
+            'gas': 2000000,
+            'gasPrice': gas_price
+        })
 
-    signed_tx = w3.eth.account.sign_transaction(tx, acct.key)
-    tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+        signed_tx = w3.eth.account.sign_transaction(tx, private_key=acct.key)
+        tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
 
-    return to_hex(tx_hash)
+    return w3.to_hex(tx_hash)
 
 
 
