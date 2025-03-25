@@ -50,9 +50,13 @@ def generate_primes(num_primes):
 
     #TODO YOUR CODE HERE
     candidate = 2
-    while len(primes_list) < num_primes:
-        is_prime = all(candidate % p != 0 for p in primes_list if p * p <= candidate)
-        if is_prime:
+    while len(primes_list) < n:
+        for p in primes_list:
+            if candidate % p == 0:
+                break
+            if p * p > candidate:
+                break
+        else:
             primes_list.append(candidate)
         candidate += 1
     return primes_list
@@ -65,8 +69,7 @@ def convert_leaves(primes_list):
     """
 
     # TODO YOUR CODE HERE
-
-    return [int.to_bytes(p, 32, 'big') for p in primes_list]
+    return [p.to_bytes(32, byteorder='big') for p in primes]
 
 
 def build_merkle(leaves):
@@ -80,10 +83,13 @@ def build_merkle(leaves):
     #TODO YOUR CODE HERE
     tree = [leaves]
     while len(tree[-1]) > 1:
-        new_layer = []
-        for i in range(0, len(tree[-1]), 2):
-            new_layer.append(hash_pair(tree[-1][i], tree[-1][i + 1]))
-        tree.append(new_layer)
+        current_layer = tree[-1]
+        next_layer = []
+        for i in range(0, len(current_layer), 2):
+            left = current_layer[i]
+            right = current_layer[i + 1] if i + 1 < len(current_layer) else current_layer[i]
+            next_layer.append(hash_pair(left, right))
+        tree.append(next_layer)
     return tree
 
 
@@ -97,12 +103,11 @@ def prove_merkle(merkle_tree, random_indx):
     merkle_proof = []
     # TODO YOUR CODE HERE
     merkle_proof = []
-    current_index = random_indx
-    for layer in merkle_tree[:-1]:
-        sibling_index = current_index ^ 1
+    for layer in tree[:-1]:
+        sibling_index = index ^ 1
         if sibling_index < len(layer):
             merkle_proof.append(layer[sibling_index])
-        current_index //= 2
+        index //= 2
     return merkle_proof
 
 
@@ -120,9 +125,9 @@ def sign_challenge(challenge):
     eth_sk = acct.key
 
     # TODO YOUR CODE HERE
-    eth_sig_obj = acct.sign_message(eth_account.messages.encode_defunct(text=challenge))
-
-    return addr, eth_sig_obj.signature.hex()
+    msg = eth_account.messages.encode_defunct(text=challenge)
+    signed = acct.sign_message(msg)
+    return acct.address, signed.signature.hex()
 
 
 def send_signed_msg(proof, random_leaf):
@@ -140,29 +145,24 @@ def send_signed_msg(proof, random_leaf):
     # TODO YOUR CODE HERE
     contract = w3.eth.contract(address=address, abi=abi)
 
-    assert isinstance(random_leaf, bytes) and len(random_leaf) == 32, "random_leaf must be bytes32"
-    assert all(isinstance(p, bytes) and len(p) == 32 for p in proof), "Proof elements must be bytes32"
+    proof_hex = [Web3.toHex(p) for p in proof]
+    leaf_hex = Web3.toHex(leaf)
 
-    try:
-        estimated_gas = contract.functions.submit(proof, random_leaf).estimate_gas({
-            'from': acct.address
-        })
-    except Exception as e:
-        print(f"{e}")
-        return None
+    nonce = w3.eth.get_transaction_count(acct.address)
+    gas_price = w3.eth.gas_price
 
-    tx = contract.functions.submit(proof, random_leaf).build_transaction({
+    tx = contract.functions.submit(proof_hex, leaf_hex).build_transaction({
         'chainId': w3.eth.chain_id,
         'from': acct.address,
-        'nonce': w3.eth.get_transaction_count(acct.address),
-        'gas': estimated_gas,
-        'gasPrice': w3.eth.gas_price
+        'nonce': nonce,
+        'gas': 2000000,
+        'gasPrice': gas_price
     })
 
-    signed_tx = acct.sign_transaction(tx)
+    signed_tx = w3.eth.account.sign_transaction(tx, private_key=acct.key)
     tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
 
-    return tx_hash.hex()
+    return Web3.toHex(tx_hash)
 
 
 
