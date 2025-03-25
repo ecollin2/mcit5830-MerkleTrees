@@ -127,9 +127,10 @@ def sign_challenge(challenge):
     eth_sk = acct.key
 
     # TODO YOUR CODE HERE
-    msg = eth_account.messages.encode_defunct(text=challenge)
-    signed = acct.sign_message(msg)
-    return acct.address, signed.signature.hex()
+    eth_encoded_msg = eth_account.messages.encode_defunct(text=challenge)
+    eth_sig_obj = acct.sign_message(eth_encoded_msg)
+
+    return addr, eth_sig_obj.signature.hex()
 
 
 def send_signed_msg(proof, random_leaf):
@@ -145,26 +146,23 @@ def send_signed_msg(proof, random_leaf):
     w3 = connect_to(chain)
 
     # TODO YOUR CODE HERE
-    contract = w3.eth.contract(address=address, abi=abi)
-
-    proof_hex = [w3.to_hex(p) for p in proof]
-    leaf_hex = w3.to_hex(random_leaf)
+    proof_hex = [Web3.toHex(p) for p in proof]
+    random_leaf_hex = Web3.toHex(random_leaf)
 
     nonce = w3.eth.get_transaction_count(acct.address)
     gas_price = w3.eth.gas_price
 
-    tx = contract.functions.submit(proof_hex, leaf_hex).build_transaction({
-        'chainId': w3.eth.chain_id,
-        'from': acct.address,
-        'nonce': nonce,
+    tx = contract.functions.submit(proof_hex, random_leaf_hex).build_transaction({
+        'chainId': 97,  # BSC testnet chain ID
         'gas': 2000000,
-        'gasPrice': gas_price
+        'gasPrice': gas_price,
+        'nonce': nonce
     })
 
-    signed_tx = w3.eth.account.sign_transaction(tx, private_key=acct.key)
+    signed_tx = w3.eth.account.sign_transaction(tx, acct.key)
     tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
 
-    return w3.to_hex(tx_hash)
+    return Web3.toHex(tx_hash)
 
 
 
