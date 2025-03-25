@@ -146,8 +146,8 @@ def send_signed_msg(proof, random_leaf):
     w3 = connect_to(chain)
 
     # TODO YOUR CODE HERE
-    proof_hex = [to_hex(p) for p in proof]       
-    leaf_hex = to_hex(random_leaf) 
+    proof_hex = [w3.to_hex(p) for p in proof]       
+    leaf_hex = w3.to_hex(random_leaf) 
 
     nonce = w3.eth.get_transaction_count(acct.address)
     gas_price = w3.eth.gas_price
