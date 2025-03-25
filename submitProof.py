@@ -50,7 +50,7 @@ def generate_primes(num_primes):
 
     #TODO YOUR CODE HERE
     candidate = 2
-    while len(primes_list) < n:
+    while len(primes_list) < num_primes:
         for p in primes_list:
             if candidate % p == 0:
                 break
@@ -69,7 +69,7 @@ def convert_leaves(primes_list):
     """
 
     # TODO YOUR CODE HERE
-    return [p.to_bytes(32, byteorder='big') for p in primes]
+    return [p.to_bytes(32, byteorder='big') for p in primes_list]
 
 
 def build_merkle(leaves):
